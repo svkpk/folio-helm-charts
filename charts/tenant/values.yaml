@@ -4,13 +4,29 @@
 
 replicaCount: 1
 
-image:
-  repository: nginx
-  pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
-  tag: ""
+global:
+  image:
+    stripesRepo: stripes/tenant
+    stripesVersion: 2022-r1
+    okapicliRepo: okapiclient
+    okapicliVersion: "0.13"
+    folioToolsRepo: "foliotools"
+    folioToolsVersion: "0.12"
+    pullPolicy: Always
+  imagePullSecrets: []
 
-imagePullSecrets: []
+tenant:
+  tenantId: demo
+  register: true
+  name: "Demo tenant"
+  description: "Demo tenant description"
+  loadSample: false
+  loadReference: true
+  frontendmodulesExtras: []
+
+stripes:
+  enable: true
+
 nameOverride: ""
 fullnameOverride: ""
 

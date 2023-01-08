@@ -1,0 +1,71 @@
+{{- if .Values.tenant.register }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ $.Release.Name }}-register
+spec:
+  template:
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+      - name: {{ .Chart.Name }}-register
+        {{- with .Values.global.image }}
+        image: {{ .folioToolsRepo }}:{{ .folioToolsVersion }}
+        {{- end }}
+        imagePullPolicy: Always
+        volumeMounts:
+        - name: scripts
+          mountPath: "/usr/src/app/kube-scripts"
+        envFrom:
+        - configMapRef:
+            name: {{ $.Release.Name }}-register-env
+        env:
+        - name: SUPERUSER_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: supertenant-secret
+              key: password
+        - name: ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ $.Release.Name }}-admin-pwd
+              key: password
+        command: ["kube-scripts/register-tenant.sh"]
+        args:
+        - --id
+        - {{ .tenantId }}
+        - --name
+        - {{ .name | quote}}
+        - --description
+        - {{ .description | default $.Release.Name | quote}}
+{{- if .loadSample }}
+        - --loadSample
+{{- end }}
+{{- if .loadReference }}
+        - --loadReference
+{{- end }}
+{{- range .Values.backend_modules }}
+        - --install-backend-module
+        - {{ .name }}-{{ .version }}
+{{- end }}
+{{- range .Values.frontend_modules }}
+        - --install-frontend-module
+        - {{ . }}
+{{- end }}
+{{- range .frontendmodulesExtras }}
+        - --install-frontend-module
+        - {{ . }}
+{{- end }}
+      volumes:
+      - name: scripts
+        configMap:
+          name: {{ $.Release.Name }}-scripts
+          defaultMode: 0555
+          optional: false
+      restartPolicy: Never
+  backoffLimit: 10
+{{- end }}

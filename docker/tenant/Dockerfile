@@ -1,0 +1,40 @@
+FROM node:16-alpine as stripes_build
+
+ARG CXXFLAGS="-std=c++17"
+
+RUN mkdir -p /etc/folio/stripes
+WORKDIR /etc/folio/stripes
+
+ARG PLATFORM_VERSION=R2-2022
+
+RUN mkdir -p /etc/folio/ && \
+  git clone https://github.com/folio-org/platform-complete.git -b $PLATFORM_VERSION /etc/folio/stripes/
+
+RUN apk upgrade \
+ && apk add \
+      alpine-sdk \
+      python3 \
+ && rm -rf /var/cache/apk/*
+RUN yarn config set python /usr/bin/python3
+
+RUN yarn config set @folio:registry https://repository.folio.org/repository/npm-folio/
+RUN yarn install
+RUN yarn build-module-descriptors
+ARG OKAPI_URL=http://localhost:9130
+ARG TENANT_ID=svkpk
+RUN yarn build output --okapi $OKAPI_URL --tenant $TENANT_ID
+
+# nginx stage
+FROM nginx:stable-alpine
+
+# Install latest patch versions of packages: https://pythonspeed.com/articles/security-updates-in-docker/
+RUN apk upgrade --no-cache
+
+EXPOSE 80
+
+COPY --from=stripes_build /etc/folio/stripes/output /usr/share/nginx/html
+COPY --from=stripes_build /etc/folio/stripes/yarn.lock /usr/share/nginx/html/yarn.lock
+COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
+COPY docker/entrypoint.sh /usr/bin/entrypoint.sh
+
+ENTRYPOINT ["/usr/bin/entrypoint.sh"]

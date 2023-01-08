@@ -27,13 +27,15 @@ global:
     okapiRepo: okapi
     okapiVersion: "4.14.4"
   image:
-    pullsecret: gitlab-folio-group
     modulesBaseUrl: folioorg
-    stripesBaseUrl: registry.svkpk.cz/folio/folio-helm-charts
+    stripesRepo: stripes/tenant
+    stripesVersion: 2022-r1
     okapicliRepo: okapiclient
     okapicliVersion: "0.13"
     folioToolsRepo: "foliotools"
     folioToolsVersion: "0.12"
+    pullPolicy: Always
+  imagePullSecrets: []
   backend_modules:
     SELF_INTRODUCE: "true"
     shortNames: "false"

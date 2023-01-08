@@ -4,13 +4,6 @@
 
 replicaCount: 3
 
-image:
-  repository: okapi
-  pullPolicy: Always
-  # Overrides the image tag whose default is the chart appVersion.
-  tag: "4.14.4"
-
-imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
 
@@ -28,10 +21,12 @@ global:
     port: 9130
     mode: cluster
     secureSupertenant: False
-    okapiBaseUrl: registry.svkpk.cz/folio/folio-helm-charts
-    okapiRepo: okapi
-    okapiVersion: "4.14.4"
     environment:
+  image:
+    okapiRepo: registry.svkpk.cz/folio/folio-helm-charts/okapi
+    okapiVersion: "4.14.4"
+    pullPolicy: Always
+  imagePullSecrets: []
 
 serviceAccount:
   # Specifies whether a service account should be created

@@ -1,0 +1,36 @@
+tenant:
+  tenantId: demo
+  register: true
+  name: "Demo tenant"
+  description: "Demo tenant description"
+  loadSample: false
+  loadReference: true
+  frontendmodulesExtras: []
+
+stripes:
+  enable: true
+
+replicaCount: 1
+resources:
+  limits:
+    memory: 512Mi
+  requests:
+    memory: 256Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+environment: {}
+
+ingress:
+  enable: true
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt"
+    # ingress.kubernetes.io/rewrite-target: /
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  path: /
+  host: demo.k8s.svkpk.cz
+  tls:
+    - secretName: demo.k8s.svkpk.cz
+      host: demo.k8s.svkpk.cz

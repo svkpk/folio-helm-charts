@@ -1,61 +1,81 @@
 {{- if .Values.ingress.enabled -}}
-{{- $fullName := include "tenant.fullname" . -}}
-{{- $svcPort := .Values.service.port -}}
-{{- if and .Values.ingress.className (not (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion)) }}
-  {{- if not (hasKey .Values.ingress.annotations "kubernetes.io/ingress.class") }}
-  {{- $_ := set .Values.ingress.annotations "kubernetes.io/ingress.class" .Values.ingress.className}}
-  {{- end }}
-{{- end }}
-{{- if semverCompare ">=1.19-0" .Capabilities.KubeVersion.GitVersion -}}
+---
 apiVersion: networking.k8s.io/v1
-{{- else if semverCompare ">=1.14-0" .Capabilities.KubeVersion.GitVersion -}}
-apiVersion: networking.k8s.io/v1beta1
-{{- else -}}
-apiVersion: extensions/v1beta1
-{{- end }}
 kind: Ingress
 metadata:
-  name: {{ $fullName }}
+  name: okapi-{{ .Release.Name }}
   labels:
-    {{- include "tenant.labels" . | nindent 4 }}
-  {{- with .Values.ingress.annotations }}
+    app: {{ template "tenant.name" $ }}
+    chart: {{ template "tenant.chart" $ }}
+    release: {{ .Release.Name }}
+    heritage: {{ $.Release.Service }}
   annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+    {{- with .Values.ingress.annotations }}
     {{- toYaml . | nindent 4 }}
-  {{- end }}
-spec:
-  {{- if and .Values.ingress.className (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion) }}
-  ingressClassName: {{ .Values.ingress.className }}
-  {{- end }}
-  {{- if .Values.ingress.tls }}
-  tls:
-    {{- range .Values.ingress.tls }}
-    - hosts:
-        {{- range .hosts }}
-        - {{ . | quote }}
-        {{- end }}
-      secretName: {{ .secretName }}
     {{- end }}
+spec:
+  ingressClassName: {{ .Values.ingress.classname | default "nginx" }}
+  tls:
+{{- range .Values.ingress.tls }}
+  - hosts:
+  {{- if .hosts }}
+    {{- range .hosts }}
+    - {{ . }}
+    {{- end }}
+  {{- else }}
+    - {{ .host }}
   {{- end }}
+    secretName: {{ .secretName }}
+{{- end }}
   rules:
-    {{- range .Values.ingress.hosts }}
-    - host: {{ .host | quote }}
+    - host: {{ .Values.ingress.host }}
       http:
         paths:
-          {{- range .paths }}
-          - path: {{ .path }}
-            {{- if and .pathType (semverCompare ">=1.18-0" $.Capabilities.KubeVersion.GitVersion) }}
-            pathType: {{ .pathType }}
-            {{- end }}
+          - path: {{ .Values.global.okapi.ingressPath | default "/okapi/(.*)" }}
+            pathType: Prefix
             backend:
-              {{- if semverCompare ">=1.19-0" $.Capabilities.KubeVersion.GitVersion }}
               service:
-                name: {{ $fullName }}
+                name: {{ .Values.global.okapi.serviceName | default "okapi" }}
                 port:
-                  number: {{ $svcPort }}
-              {{- else }}
-              serviceName: {{ $fullName }}
-              servicePort: {{ $svcPort }}
-              {{- end }}
-          {{- end }}
+                  number: {{ .Values.global.okapi.port | default "9130" }}
+---
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: stripes--{{ .Release.Name }}
+  labels:
+    app: {{ template "tenant.name" $ }}
+    chart: {{ template "tenant.chart" $ }}
+    release: {{ .Release.Name }}
+    heritage: {{ $.Release.Service }}
+  annotations:
+    {{- with .Values.ingress.annotations }}
+    {{- toYaml . | nindent 4 }}
     {{- end }}
+spec:
+  ingressClassName: {{ .Values.ingress.classname | default "nginx" }}
+  tls:
+{{- range .Values.ingress.tls }}
+  - hosts:
+  {{- if .hosts }}
+    {{- range .hosts }}
+    - {{ . }}
+    {{- end }}
+  {{- else }}
+    - {{ .host }}
+  {{- end }}
+    secretName: {{ .secretName }}
+{{- end }}
+  rules:
+  - host: {{ .Values.ingress.host }}
+    http:
+      paths:
+        - path: {{ .ingress.path | default "/" }}
+          pathType: Prefix
+          backend:
+            service:
+              name: {{ $.Release.Name }}-{{.tenantId}}
+              port:
+                number: {{ .stripes.port | default "80" }}
 {{- end }}
