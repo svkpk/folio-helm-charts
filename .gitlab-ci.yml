@@ -36,7 +36,7 @@ docker:image:okapi:
   rules:
     - if: '$CI_COMMIT_BRANCH == "master"'
       changes:
-        - docker/okapi/*
+        - docker/okapi/**/*
         - .gitlab-ci.yml
       when: always
 
@@ -48,7 +48,7 @@ docker:image:foliotools:
   rules:
     - if: '$CI_COMMIT_BRANCH == "master"'
       changes:
-        - docker/foliotools/*
+        - docker/foliotools/**/*
         - .gitlab-ci.yml
       when: always
 
@@ -60,7 +60,7 @@ docker:image:foliotools:
 #   rules:
 #     - if: '$CI_COMMIT_BRANCH == "master"'
 #       changes:
-#         - docker/okapiclient/*
+#         - docker/okapiclient/**/*
 #         - .gitlab-ci.yml
 #       when: always
 
@@ -72,7 +72,7 @@ docker:image:foliotools:
 #   rules:
 #     - if: '$CI_COMMIT_BRANCH == "master"'
 #       changes:
-#         - docker/tenant/*
+#         - docker/tenant/**/*
 #         - .gitlab-ci.yml
 #       when: always
 
