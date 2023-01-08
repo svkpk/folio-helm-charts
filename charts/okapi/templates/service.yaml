@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "okapi.fullname" . }}
+  labels:
+    {{- include "okapi.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type | default "ClusterIP" }}
+  ports:
+    - port: {{ .Values.service.port | default "9130" }}
+      targetPort: okapi
+      protocol: TCP
+      name: okapi
+    - port: 5701
+      targetPort: hazelcast1
+      protocol: TCP
+      name: hazelcast1
+    - port: 5702
+      targetPort: hazelcast2
+      protocol: TCP
+      name: hazelcast2
+    - port: 5703
+      targetPort: hazelcast3
+      protocol: TCP
+      name: hazelcast3
+    - port: 5704
+      targetPort: hazelcast4
+      protocol: TCP
+      name: hazelcast4
+    - port: 5705
+      targetPort: hazelcast5
+      protocol: TCP
+      name: hazelcast5
+    - port: 5706
+      targetPort: hazelcast6
+      protocol: TCP
+      name: hazelcast6
+    - port: 54327
+      targetPort: hazelcastmulticast
+      protocol: TCP
+      name: hazelcastmulticast
+  selector:
+    {{- include "okapi.selectorLabels" . | nindent 4 }}

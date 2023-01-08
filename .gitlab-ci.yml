@@ -1,0 +1,111 @@
+image:
+  name: alpine/helm:latest
+  entrypoint: [""]
+
+stages:
+  - lint
+  - build
+  - deploy
+
+lint helm charts:
+  stage: lint
+  script:
+    - helm lint charts/okapi
+    - helm lint charts/tenant
+    - helm lint charts/module
+
+.build:docker:
+  stage: build
+  image:
+    name: gcr.io/kaniko-project/executor:debug
+    entrypoint: [""]
+  script:
+    - mkdir -p /kaniko/.docker
+    - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
+    - |
+      /kaniko/executor --context docker/$DOCKER_IMAGE_APP \
+      --dockerfile docker/$DOCKER_IMAGE_APP/Dockerfile $BUILD_ARGS \
+      --destination $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_APP:$DOCKER_IMAGE_VERSION
+  interruptible: true
+
+docker:image:okapi:
+  extends: .build:docker
+  variables:
+    DOCKER_IMAGE_APP: "okapi"
+    DOCKER_IMAGE_VERSION: "4.14.4"
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'
+      changes:
+        - docker/okapi/*
+        - .gitlab-ci.yml
+      when: always
+
+docker:image:foliotools:
+  extends: .build:docker
+  variables:
+    DOCKER_IMAGE_APP: "foliotools"
+    DOCKER_IMAGE_VERSION: "0.1.0"
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'
+      changes:
+        - docker/foliotools/*
+        - .gitlab-ci.yml
+      when: always
+
+# docker:image:okapiclient:
+#   extends: .build:docker
+#   variables:
+#     DOCKER_IMAGE_APP: "okapiclient"
+#     DOCKER_IMAGE_VERSION: "0.1.0"
+#   rules:
+#     - if: '$CI_COMMIT_BRANCH == "master"'
+#       changes:
+#         - docker/okapiclient/*
+#         - .gitlab-ci.yml
+#       when: always
+
+# docker:image:tenant:
+#   extends: .build:docker
+#   variables:
+#     DOCKER_IMAGE_APP: "tenant"
+#     DOCKER_IMAGE_VERSION: "0.1.0"
+#   rules:
+#     - if: '$CI_COMMIT_BRANCH == "master"'
+#       changes:
+#         - docker/tenant/*
+#         - .gitlab-ci.yml
+#       when: always
+
+pages:
+  stage: build
+  script:
+    - mkdir public
+    - "echo -e 'User-Agent: *\nDisallow: /' > ./public/robots.txt"
+    - helm package -d public charts/okapi
+    - helm package -d public charts/tenant
+    - helm package -d public charts/module
+    - helm repo index public --url $CI_PAGES_URL
+    - 'echo "Project: ${CI_PROJECT_URL}" > public/index.html'
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'
+      changes:
+        - charts/**/*
+        - .gitlab-ci.yml
+      when: always
+  artifacts:
+    paths:
+      - public
+
+packages:
+  image: curlimages/curl:latest
+  stage: deploy
+  script:
+    - 'curl --request POST --user gitlab-ci-token:$CI_JOB_TOKEN --form "chart=@$(find . -type f -name "okapi*tgz" | head -n 1)" "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/helm/api/stable/charts"'
+    - 'curl --request POST --user gitlab-ci-token:$CI_JOB_TOKEN --form "chart=@$(find . -type f -name "tenant*tgz" | head -n 1)" "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/helm/api/stable/charts"'
+    - 'curl --request POST --user gitlab-ci-token:$CI_JOB_TOKEN --form "chart=@$(find . -type f -name "module*tgz" | head -n 1)" "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/helm/api/stable/charts"'
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'
+      changes:
+        - charts/**/*
+        - .gitlab-ci.yml
+      when: always

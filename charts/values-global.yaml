@@ -1,0 +1,43 @@
+global:
+  db:
+    maxpoolsize: 10
+    host: postgres
+    port: 5432
+    postgresSecret: okapi-postgres
+    okapiName: okapi
+    okapiUser: okapi
+    okapiPwKey: okapiUserPassword
+    folioName: folio
+    folioUser: folio
+    folioPwKey: folioUserPassword
+  kafka:
+    port: 9092
+    host: kafka
+  minio:
+    host: minio
+    port: 80
+  elasticSearch:
+    host: elasticsearch
+    port: 9200
+  okapi:
+    host: okapi
+    secureSupertenant: False
+    port: 9130
+    okapiBaseUrl: registry.svkpk.cz/folio/folio-helm-charts
+    okapiRepo: okapi
+    okapiVersion: "4.14.4"
+  image:
+    pullsecret: gitlab-folio-group
+    modulesBaseUrl: folioorg
+    stripesBaseUrl: registry.svkpk.cz/folio/folio-helm-charts
+    okapicliRepo: okapiclient
+    okapicliVersion: "0.13"
+    folioToolsRepo: "foliotools"
+    folioToolsVersion: "0.12"
+  backend_modules:
+    SELF_INTRODUCE: "true"
+    shortNames: "false"
+  folio:
+    release: "2022-r2"
+    subtag: "GA"
+    env: "shared"

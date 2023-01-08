@@ -1,0 +1,106 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    app: okapi
+    name: {{ template "okapi.name" . }}
+    release: {{ .Release.Name }}
+spec:
+  serviceName: {{ include "okapi.fullname" . | default "okapi"  }}
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: okapi
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: okapi
+        release: {{ .Release.Name }}
+    spec:
+      volumes:
+{{- if eq $.Values.global.okapi.mode "cluster" }}
+      - name: hazelcast-config-xml
+        configMap:
+          name: okapi-hazelcast-config-{{ .Release.Name }}
+{{- end}}
+      - name: api-certificate
+        secret:
+          secretName: {{ .Release.Name }}-discovery
+          items:
+          - key: ca.crt
+            path: ca.crt
+      containers:
+      - name: {{ .Release.Name }}
+        image: {{ .Values.global.okapi.okapiBaseUrl }}/{{ .Values.global.okapi.okapiRepo }}:{{ .Values.global.okapi.okapiVersion }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        env:
+          - name: INITDB
+            value: {{ .Values.global.okapi.initDB | default false | quote }}
+          - name: PG_HOST
+            value: {{ tpl .Values.global.db.host . | quote }}
+          - name: PG_PORT
+            value: {{ .Values.global.db.port | default "5432" | quote }}
+          - name: PG_DATABASE
+            value: {{ .Values.global.db.okapiName | default "okapi" | quote }}
+          - name: PG_USERNAME
+            value: {{ .Values.global.db.okapiUser | default "okapi" | quote }}
+          - name: PG_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.global.db.postgresSecret }}
+                key: {{ .Values.global.db.okapiPwKey }}
+          - name: KUBE_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: okapi-discovery
+                key: token
+          - name: DB_MAXPOOLSIZE
+            value: {{ .Values.global.db.maxpoolsize | quote }}
+          - name: OKAPI_URL
+            value: http://{{ include "okapi.fullname" . }}:{{ .Values.service.port | default "9130" }}
+        envFrom:
+          - configMapRef:
+              name: {{ .Release.Name }}-env
+        ports:
+          - name: okapi
+            containerPort: {{ .Values.global.okapi.port }}
+          - name: okapi2
+            containerPort: 9150
+          - name: hazelcast1
+            containerPort: 5701
+          - name: hazelcast2
+            containerPort: 5702
+          - name: hazelcast3
+            containerPort: 5703
+          - name: hazelcast4
+            containerPort: 5704
+          - name: hazelcast5
+            containerPort: 5705
+          - name: hazelcast6
+            containerPort: 5706
+          - name: hazelcastmulticast
+            containerPort: 54327
+        volumeMounts:
+{{ if eq .Values.global.okapi.mode "cluster" }}
+          - mountPath: /etc/hazelcast
+            name: hazelcast-config-xml
+{{ end}}
+          - mountPath: /etc/kubernetes/ssl/
+            name: api-certificate
+      imagePullSecrets:
+        - name: {{ .Values.global.okapi.pullsecret }}
+      topologySpreadConstraints:
+        - topologyKey: site
+          maxSkew: 1
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: okapi
+        - topologyKey: kubernetes.io/hostname
+          maxSkew: 1
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: okapi
