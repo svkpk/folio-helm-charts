@@ -69,7 +69,7 @@ docker:image:tenant:svkpk:
   variables:
     DOCKER_IMAGE_APP: "tenant/svkpk"
     DOCKER_IMAGE_VERSION: "2022-r2"
-    BUILD_ARGS: --buildarg PLATFORM_VERSION=R2-2022 --buildarg OKAPI_URL=https://folio-svkpk.k8s.svkpk.cz:9130 --buildarg TENANT_ID=svkpk
+    BUILD_ARGS: --build-arg PLATFORM_VERSION=R2-2022 --build-arg OKAPI_URL=https://folio-svkpk.k8s.svkpk.cz:9130 --build-arg TENANT_ID=svkpk
   rules:
     - if: '$CI_COMMIT_BRANCH == "master"'
       changes:
