@@ -7,7 +7,8 @@ WORKDIR /etc/folio/stripes
 
 ARG PLATFORM_VERSION=R2-2022
 
-RUN mkdir -p /etc/folio/ && \
+RUN apk add git && \
+  mkdir -p /etc/folio/ && \
   git clone https://github.com/folio-org/platform-complete.git -b $PLATFORM_VERSION /etc/folio/stripes/
 
 RUN apk upgrade \
