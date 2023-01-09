@@ -22,6 +22,7 @@ lint helm charts:
   script:
     - mkdir -p /kaniko/.docker
     - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
+    - set -x
     - |
       /kaniko/executor --context docker/$DOCKER_BASE_PATH \
       --dockerfile docker/$DOCKER_BASE_PATH/Dockerfile $BUILD_ARGS \
