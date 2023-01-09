@@ -23,14 +23,15 @@ lint helm charts:
     - mkdir -p /kaniko/.docker
     - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
     - |
-      /kaniko/executor --context docker/$DOCKER_IMAGE_APP \
-      --dockerfile docker/$DOCKER_IMAGE_APP/Dockerfile $BUILD_ARGS \
+      /kaniko/executor --context docker/$DOCKER_BASE_PATH \
+      --dockerfile docker/$DOCKER_BASE_PATH/Dockerfile $BUILD_ARGS \
       --destination $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_APP:$DOCKER_IMAGE_VERSION
   interruptible: true
 
 docker:image:okapi:
   extends: .build:docker
   variables:
+    DOCKER_BASE_PATH: "okapi"
     DOCKER_IMAGE_APP: "okapi"
     DOCKER_IMAGE_VERSION: "4.14.4"
   rules:
@@ -43,6 +44,7 @@ docker:image:okapi:
 docker:image:foliotools:
   extends: .build:docker
   variables:
+    DOCKER_BASE_PATH: "foliotools"
     DOCKER_IMAGE_APP: "foliotools"
     DOCKER_IMAGE_VERSION: "0.1.0"
   rules:
@@ -55,6 +57,7 @@ docker:image:foliotools:
 # docker:image:okapiclient:
 #   extends: .build:docker
 #   variables:
+#     DOCKER_BASE_PATH: "okapiclient"
 #     DOCKER_IMAGE_APP: "okapiclient"
 #     DOCKER_IMAGE_VERSION: "0.1.0"
 #   rules:
@@ -67,6 +70,7 @@ docker:image:foliotools:
 docker:image:tenant:svkpk:
   extends: .build:docker
   variables:
+    DOCKER_BASE_PATH: "tenant"
     DOCKER_IMAGE_APP: "tenant/svkpk"
     DOCKER_IMAGE_VERSION: "2022-r2"
     BUILD_ARGS: --build-arg PLATFORM_VERSION=R2-2022 --build-arg OKAPI_URL=https://folio-svkpk.k8s.svkpk.cz:9130 --build-arg TENANT_ID=svkpk
